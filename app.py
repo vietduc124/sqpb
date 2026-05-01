@@ -54,14 +54,19 @@ html, body, .stApp,
 .pb-header {{
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 24px;
     background: #ffffff;
     padding: 14px 40px;
     border-bottom: 2px solid #e0d0a0;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    width: 100%;
 }}
-.pb-title {{ text-align: center; line-height: 1.3; }}
+.pb-title {{
+    flex: 1;
+    text-align: center;
+    line-height: 1.3;
+}}
 .pb-title-1 {{
     font-size: 20px; font-weight: 700;
     color: #1a5c1a; text-transform: uppercase; letter-spacing: 1px;
