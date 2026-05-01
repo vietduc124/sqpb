@@ -30,20 +30,24 @@ st.markdown(f"""
 [data-testid="collapsedControl"] {{ display: none !important; }}
 #MainMenu, footer, header {{ visibility: hidden; }}
 
-/* ── Layout full width, sát top ── */
+/* ── Full width, sát top ── */
 .stApp {{ background: #f5edd8; }}
-.stApp > div:first-child {{ padding-top: 0 !important; }}
+html, body, .stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] > section.main,
 .main .block-container {{
     padding: 0 !important;
-    max-width: 100% !important;
     margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
 }}
-[data-testid="stAppViewContainer"] > section {{
+/* Xóa khoảng trống top Streamlit tự thêm */
+[data-testid="stAppViewContainer"] > section.main {{
     padding-top: 0 !important;
 }}
-/* Xóa padding mặc định trên cùng của Streamlit */
-div[data-testid="stVerticalBlock"] > div:first-child {{
-    margin-top: 0 !important;
+.block-container {{
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }}
 
 /* ── Header ── */
