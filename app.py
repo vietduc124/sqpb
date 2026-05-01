@@ -16,11 +16,11 @@ st.set_page_config(
 )
 
 # Logo
-logo_path = Path(__file__).parent / "assets" / "logo.png"
+logo_path = Path(__file__).parent / "assets" / "logo.jpg"
 logo_html = '<div style="width:90px;height:90px;"></div>'
 if logo_path.exists():
     b64 = base64.b64encode(logo_path.read_bytes()).decode()
-    logo_html = f'<img src="data:image/png;base64,{b64}" style="height:90px;width:90px;object-fit:contain;" alt="Logo"/>'
+    logo_html = f'<img src="data:image/jpeg;base64,{b64}" style="height:90px;width:90px;object-fit:contain;" alt="Logo"/>'
 
 st.markdown(f"""
 <style>
@@ -30,11 +30,20 @@ st.markdown(f"""
 [data-testid="collapsedControl"] {{ display: none !important; }}
 #MainMenu, footer, header {{ visibility: hidden; }}
 
-/* ── Layout ── */
+/* ── Layout full width, sát top ── */
 .stApp {{ background: #f5edd8; }}
+.stApp > div:first-child {{ padding-top: 0 !important; }}
 .main .block-container {{
     padding: 0 !important;
     max-width: 100% !important;
+    margin: 0 !important;
+}}
+[data-testid="stAppViewContainer"] > section {{
+    padding-top: 0 !important;
+}}
+/* Xóa padding mặc định trên cùng của Streamlit */
+div[data-testid="stVerticalBlock"] > div:first-child {{
+    margin-top: 0 !important;
 }}
 
 /* ── Header ── */
@@ -177,10 +186,7 @@ st.markdown(f"""
 <div class="pb-chat-bg"></div>
 """, unsafe_allow_html=True)
 
-# ── Session state ──────────────────────────────────────────────────────────────
-USER_AVATAR = "https://api.dicebear.com/9.x/avataaars/svg?seed=user&backgroundColor=b6e3f4&top=shortHair"
-BOT_AVATAR  = "https://api.dicebear.com/9.x/bottts/svg?seed=claude&backgroundColor=d1d4f9"
-
+# ── Session state ─────────────────────────────────────────────────────────────
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -197,14 +203,13 @@ if not st.session_state.messages:
 
 # ── Hiển thị lịch sử chat ─────────────────────────────────────────────────────
 for msg in st.session_state.messages:
-    avatar = USER_AVATAR if msg["role"] == "user" else BOT_AVATAR
-    with st.chat_message(msg["role"], avatar=avatar):
+    with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
 # ── Chat input ────────────────────────────────────────────────────────────────
 if prompt := st.chat_input("Hãy nhập câu hỏi của bạn tại đây..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user", avatar=USER_AVATAR):
+    with st.chat_message("user"):
         st.markdown(prompt)
 
     context_chunks = retrieve_context(prompt)
@@ -233,7 +238,7 @@ if prompt := st.chat_input("Hãy nhập câu hỏi của bạn tại đây..."):
 
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
-    with st.chat_message("assistant", avatar=BOT_AVATAR):
+    with st.chat_message("assistant"):
         def stream_response():
             with client.messages.stream(
                 model="claude-sonnet-4-6",
