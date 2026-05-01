@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+uploads/
+backend/chroma_db/
+*.egg-info/
+.DS_Store
