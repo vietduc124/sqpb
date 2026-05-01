@@ -13,8 +13,7 @@ st.markdown("""
 <style>
 #MainMenu, footer, header { visibility: hidden; }
 /* Ẩn trang Admin khỏi sidebar */
-[data-testid="stSidebarNavItems"] li:has(a[href$="1_Admin"]),
-[data-testid="stSidebarNavItems"] li:has(a[href$="Admin"]) {
+[data-testid="stSidebarNavItems"] li:has(a[href$="admin"]) {
     display: none !important;
 }
 </style>
