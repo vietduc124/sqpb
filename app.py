@@ -12,6 +12,11 @@ st.set_page_config(page_title="Trợ lý AI", page_icon="💬", layout="centered
 st.markdown("""
 <style>
 #MainMenu, footer, header { visibility: hidden; }
+/* Ẩn trang Admin khỏi sidebar */
+[data-testid="stSidebarNavItems"] li:has(a[href$="1_Admin"]),
+[data-testid="stSidebarNavItems"] li:has(a[href$="Admin"]) {
+    display: none !important;
+}
 </style>
 """, unsafe_allow_html=True)
 

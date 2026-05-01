@@ -1,5 +1,6 @@
-import streamlit as st
+import os
 from pathlib import Path
+import streamlit as st
 from dotenv import load_dotenv
 from rag import ingest_document, list_documents, delete_document, UPLOAD_DIR
 
@@ -13,13 +14,39 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📁 Quản lý tài liệu")
+# ── Authentication ────────────────────────────────────────────────────────────
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+
+if "admin_auth" not in st.session_state:
+    st.session_state.admin_auth = False
+
+if not st.session_state.admin_auth:
+    st.title("🔐 Đăng nhập Admin")
+    with st.form("login_form"):
+        pwd = st.text_input("Mật khẩu", type="password", placeholder="Nhập mật khẩu...")
+        submitted = st.form_submit_button("Đăng nhập", use_container_width=True)
+        if submitted:
+            if pwd == ADMIN_PASSWORD:
+                st.session_state.admin_auth = True
+                st.rerun()
+            else:
+                st.error("Sai mật khẩu!")
+    st.stop()
+
+# ── Admin UI ──────────────────────────────────────────────────────────────────
+col1, col2 = st.columns([5, 1])
+with col1:
+    st.title("📁 Quản lý tài liệu")
+with col2:
+    if st.button("Đăng xuất", use_container_width=True):
+        st.session_state.admin_auth = False
+        st.rerun()
 
 # ── Upload ────────────────────────────────────────────────────────────────────
 st.subheader("Tải tài liệu lên")
 
 uploaded_files = st.file_uploader(
-    "Chọn file (PDF, DOCX, TXT, MD)",
+    "Chọn file",
     type=["pdf", "txt", "docx", "doc", "md"],
     accept_multiple_files=True,
     label_visibility="collapsed",
