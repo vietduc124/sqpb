@@ -16,7 +16,7 @@ UPLOAD_DIR = Path(__file__).parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 EMBED_MODEL = "models/gemini-embedding-001"
-EMBED_DIM   = 768
+EMBED_DIM   = 3072
 INDEX_NAME  = os.getenv("PINECONE_INDEX_NAME", "rag-chatbot")
 CHUNK_SIZE  = 800
 CHUNK_OVERLAP = 100
