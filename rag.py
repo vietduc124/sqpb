@@ -1,11 +1,11 @@
 import os
-import time
 import uuid
 from pathlib import Path
 from typing import List
 
 from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
+import google.generativeai as genai
 
 load_dotenv(Path(__file__).parent / ".env", override=True)
 from pypdf import PdfReader
@@ -14,8 +14,8 @@ import docx
 UPLOAD_DIR = Path(__file__).parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-EMBED_MODEL = "multilingual-e5-large"  # Pinecone hosted, supports Vietnamese
-EMBED_DIM   = 1024
+EMBED_MODEL = "models/gemini-embedding-001"
+EMBED_DIM   = 768
 INDEX_NAME  = os.getenv("PINECONE_INDEX_NAME", "rag-chatbot")
 CHUNK_SIZE  = 800
 CHUNK_OVERLAP = 100
@@ -80,21 +80,23 @@ def _get_index():
     return pc.Index(INDEX_NAME)
 
 
-EMBED_BATCH = 30  # nhỏ để tránh rate limit
+EMBED_BATCH = 100
 
 def _embed(texts: List[str], input_type: str = "passage") -> List[List[float]]:
-    pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"])
+    genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
+    task_type = "retrieval_document" if input_type == "passage" else "retrieval_query"
     vectors = []
     for i in range(0, len(texts), EMBED_BATCH):
         batch = texts[i : i + EMBED_BATCH]
-        result = pc.inference.embed(
+        result = genai.embed_content(
             model=EMBED_MODEL,
-            inputs=batch,
-            parameters={"input_type": input_type, "truncate": "END"},
+            content=batch,
+            task_type=task_type,
         )
-        vectors.extend(e.values for e in result)
-        if i + EMBED_BATCH < len(texts):
-            time.sleep(5)  # tránh vượt 250k tokens/phút
+        embeddings = result["embedding"]
+        if isinstance(embeddings[0], float):
+            embeddings = [embeddings]
+        vectors.extend(embeddings)
     return vectors
 
 
