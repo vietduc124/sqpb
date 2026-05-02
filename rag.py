@@ -174,7 +174,7 @@ def delete_document(filename: str) -> int:
     return len(ids)
 
 
-def retrieve_context(query: str, top_k: int = 5) -> List[str]:
+def retrieve_context(query: str, top_k: int = 15) -> List[str]:
     index = _get_index()
     if index.describe_index_stats().total_vector_count == 0:
         return []
