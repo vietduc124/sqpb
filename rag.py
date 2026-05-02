@@ -79,14 +79,20 @@ def _get_index():
     return pc.Index(INDEX_NAME)
 
 
+EMBED_BATCH = 90  # multilingual-e5-large limit is 96
+
 def _embed(texts: List[str], input_type: str = "passage") -> List[List[float]]:
     pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"])
-    result = pc.inference.embed(
-        model=EMBED_MODEL,
-        inputs=texts,
-        parameters={"input_type": input_type, "truncate": "END"},
-    )
-    return [e.values for e in result]
+    vectors = []
+    for i in range(0, len(texts), EMBED_BATCH):
+        batch = texts[i : i + EMBED_BATCH]
+        result = pc.inference.embed(
+            model=EMBED_MODEL,
+            inputs=batch,
+            parameters={"input_type": input_type, "truncate": "END"},
+        )
+        vectors.extend(e.values for e in result)
+    return vectors
 
 
 def _extract_text(file_path: Path) -> str:
