@@ -5,12 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 
-st.set_page_config(
-    page_title="Nhóm Tác Giả – Trường Sĩ Quan Pháo Binh",
-    page_icon="👥",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
 
 def _b64(path: Path) -> str:
     return base64.b64encode(path.read_bytes()).decode()
