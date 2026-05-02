@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 from pathlib import Path
 from typing import List
@@ -80,7 +81,7 @@ def _get_index():
     return pc.Index(INDEX_NAME)
 
 
-EMBED_BATCH = 100
+EMBED_BATCH = 50  # 50 texts/call, ~0.7s delay → dưới 100 req/phút
 
 def _embed(texts: List[str], input_type: str = "passage") -> List[List[float]]:
     genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
@@ -88,15 +89,25 @@ def _embed(texts: List[str], input_type: str = "passage") -> List[List[float]]:
     vectors = []
     for i in range(0, len(texts), EMBED_BATCH):
         batch = texts[i : i + EMBED_BATCH]
-        result = genai.embed_content(
-            model=EMBED_MODEL,
-            content=batch,
-            task_type=task_type,
-        )
-        embeddings = result["embedding"]
-        if isinstance(embeddings[0], float):
-            embeddings = [embeddings]
-        vectors.extend(embeddings)
+        for attempt in range(5):
+            try:
+                result = genai.embed_content(
+                    model=EMBED_MODEL,
+                    content=batch,
+                    task_type=task_type,
+                )
+                embeddings = result["embedding"]
+                if isinstance(embeddings[0], float):
+                    embeddings = [embeddings]
+                vectors.extend(embeddings)
+                break
+            except Exception as e:
+                if "429" in str(e) and attempt < 4:
+                    time.sleep(60)  # chờ quota reset
+                else:
+                    raise
+        if i + EMBED_BATCH < len(texts):
+            time.sleep(0.7)
     return vectors
 
 
