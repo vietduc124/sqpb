@@ -22,7 +22,7 @@ logo_path = Path(__file__).parent / "assets" / "logo.jpg"
 logo_html = '<div style="width:90px;height:90px;"></div>'
 if logo_path.exists():
     b64 = base64.b64encode(logo_path.read_bytes()).decode()
-    logo_html = f'<img src="data:image/jpeg;base64,{b64}" style="height:90px;width:90px;object-fit:contain;" alt="Logo"/>'
+    logo_html = f'<a href="/" target="_self"><img src="data:image/jpeg;base64,{b64}" style="height:90px;width:90px;object-fit:contain;cursor:pointer;" alt="Logo"/></a>'
 
 # ── Markdown → HTML ────────────────────────────────────────────────────────────
 def md(text: str) -> str:
@@ -81,13 +81,15 @@ html,body,.stApp,
 .pb-title-2 {{ font-size:30px; font-weight:900; color:#c0392b; text-transform:uppercase; letter-spacing:2px; }}
 
 /* Ticker */
-.pb-ticker {{ background:#1a2e5a; padding:9px 0; overflow:hidden; white-space:nowrap; }}
+.pb-ticker {{
+    background:#1a2e5a; padding:12px 20px;
+    text-align:center;
+}}
 .pb-ticker-inner {{
     display:inline-block;
-    animation:marquee 40s linear infinite;
-    color:#ffd700; font-weight:600; font-size:14px; padding-left:100%;
+    color:#ffd700; font-weight:700; font-size:15px;
+    line-height:1.7; letter-spacing:.5px;
 }}
-@keyframes marquee {{ from{{transform:translateX(0%)}} to{{transform:translateX(-100%)}} }}
 
 /* Watermark */
 .pb-chat-bg {{
@@ -148,6 +150,16 @@ html,body,.stApp,
     padding:4px 24px !important;
 }}
 
+/* Nav button */
+.pb-nav-btn {{
+    display:inline-block; text-decoration:none;
+    background:#1a2e5a; color:#ffd700 !important;
+    border:2px solid #ffd700; border-radius:6px;
+    padding:7px 16px; font-size:13px; font-weight:700;
+    white-space:nowrap; transition:background .2s;
+}}
+.pb-nav-btn:hover {{ background:#253f7a; }}
+
 /* Responsive */
 @media(max-width:768px){{
     .pb-header{{ padding:10px 16px; gap:12px; }}
@@ -156,6 +168,7 @@ html,body,.stApp,
     .pb-title-2{{ font-size:18px; }}
     .bubble{{ max-width:85%; font-size:13px; }}
     .chat-row{{ padding:4px 12px; }}
+    .pb-nav-btn{{ font-size:11px; padding:5px 10px; }}
 }}
 @media(max-width:480px){{
     .pb-title-1{{ font-size:11px; }}
@@ -170,13 +183,14 @@ html,body,.stApp,
         <div class="pb-title-1">Bộ Tư Lệnh Pháo Binh - Tên Lửa</div>
         <div class="pb-title-2">Trường Sĩ Quan Pháo Binh</div>
     </div>
+    <a class="pb-nav-btn" href="/tac_gia" target="_self">👥 Nhóm tác giả</a>
 </div>
 
 <div class="pb-ticker">
     <span class="pb-ticker-inner">
-        📢&nbsp; Cuộc thi tìm hiểu 80 năm truyền thống Bộ tổng tham mưu (07/9/1945 - 07/9/2025)
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        📢&nbsp; Cuộc thi tìm hiểu 80 năm truyền thống Bộ tổng tham mưu (07/9/1945 - 07/9/2025)
+        BÀI DỰ THI TÌM HIỂU 80 NĂM NGÀY TRUYỀN THỐNG BỘ ĐỘI PHÁO BINH - TÊN LỬA<br>
+        QUÂN ĐỘI NHÂN DÂN VIỆT NAM<br>
+        (1946 - 2026)
     </span>
 </div>
 
