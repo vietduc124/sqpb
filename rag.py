@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 from pathlib import Path
 from typing import List
@@ -79,7 +80,7 @@ def _get_index():
     return pc.Index(INDEX_NAME)
 
 
-EMBED_BATCH = 90  # multilingual-e5-large limit is 96
+EMBED_BATCH = 30  # nhỏ để tránh rate limit
 
 def _embed(texts: List[str], input_type: str = "passage") -> List[List[float]]:
     pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"])
@@ -92,6 +93,8 @@ def _embed(texts: List[str], input_type: str = "passage") -> List[List[float]]:
             parameters={"input_type": input_type, "truncate": "END"},
         )
         vectors.extend(e.values for e in result)
+        if i + EMBED_BATCH < len(texts):
+            time.sleep(5)  # tránh vượt 250k tokens/phút
     return vectors
 
 
