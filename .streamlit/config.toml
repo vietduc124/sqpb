@@ -1,0 +1,9 @@
+[global]
+developmentMode = false
+
+[client]
+toolbarMode = "viewer"
+showErrorDetails = false
+
+[server]
+headless = true
