@@ -203,7 +203,7 @@ if prompt := st.chat_input("Hãy nhập câu hỏi của bạn tại đây..."):
     with st.chat_message("assistant"):
         def stream_response():
             with client.messages.stream(
-                model="claude-sonnet-4-6",
+                model="claude-haiku-4-5-20251001",
                 max_tokens=2048,
                 system=system_prompt,
                 messages=api_messages,
