@@ -168,8 +168,15 @@ for msg in st.session_state.messages:
         unsafe_allow_html=True,
     )
 
+MAX_QUESTION_LEN = 300
+HISTORY_TURNS = 4  # giữ 4 lượt gần nhất (user + assistant)
+
 # ── Chat input ─────────────────────────────────────────────────────────────────
-if prompt := st.chat_input("Hãy nhập câu hỏi của bạn tại đây..."):
+if prompt := st.chat_input("Hãy nhập câu hỏi của bạn tại đây... (tối đa 300 ký tự)"):
+    if len(prompt) > MAX_QUESTION_LEN:
+        st.warning(f"⚠️ Câu hỏi quá dài ({len(prompt)} ký tự). Vui lòng rút gọn còn {MAX_QUESTION_LEN} ký tự.")
+        st.stop()
+
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.markdown(
         f'<div class="chat-row user"><div class="bubble user">{md(prompt)}</div></div>',
@@ -194,17 +201,17 @@ if prompt := st.chat_input("Hãy nhập câu hỏi của bạn tại đây..."):
             "Hãy thông báo cho người dùng và đề nghị liên hệ admin để tải tài liệu lên."
         )
 
-    api_messages = [
-        {"role": m["role"], "content": m["content"]}
-        for m in st.session_state.messages
-    ]
+    # Chỉ giữ HISTORY_TURNS lượt gần nhất
+    recent = st.session_state.messages[-HISTORY_TURNS * 2:]
+    api_messages = [{"role": m["role"], "content": m["content"]} for m in recent]
+
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
     with st.chat_message("assistant"):
         def stream_response():
             with client.messages.stream(
                 model="claude-haiku-4-5-20251001",
-                max_tokens=2048,
+                max_tokens=1024,
                 system=system_prompt,
                 messages=api_messages,
             ) as stream:
