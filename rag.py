@@ -174,6 +174,38 @@ def delete_document(filename: str) -> int:
     return len(ids)
 
 
+def list_chunks(filename: str) -> List[dict]:
+    """Trả về danh sách chunks của 1 file: [{id, chunk_index, text}]"""
+    index = _get_index()
+    result = index.query(
+        vector=[0.0] * EMBED_DIM,
+        top_k=10000,
+        include_metadata=True,
+        filter={"source": {"$eq": filename}},
+    )
+    items = [
+        {
+            "id": m.id,
+            "chunk_index": m.metadata.get("chunk_index", 0),
+            "text": m.metadata.get("text", ""),
+        }
+        for m in result.matches
+    ]
+    items.sort(key=lambda x: x["chunk_index"])
+    return items
+
+
+def update_chunk(chunk_id: str, new_text: str, filename: str, chunk_index: int) -> None:
+    """Re-embed và upsert lại 1 chunk cụ thể."""
+    index = _get_index()
+    vec = _embed([new_text])[0]
+    index.upsert(vectors=[{
+        "id": chunk_id,
+        "values": vec,
+        "metadata": {"text": new_text, "source": filename, "chunk_index": chunk_index},
+    }])
+
+
 def retrieve_context(query: str, top_k: int = 15) -> List[str]:
     index = _get_index()
     if index.describe_index_stats().total_vector_count == 0:

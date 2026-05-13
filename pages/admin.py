@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
-from rag import ingest_document, list_documents, delete_document, UPLOAD_DIR
+from rag import ingest_document, list_documents, delete_document, list_chunks, update_chunk, UPLOAD_DIR
 
 load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 
@@ -89,3 +89,50 @@ else:
                     deleted = delete_document(doc["name"])
                 st.toast(f"Đã xóa {doc['name']} ({deleted} đoạn)", icon="✅")
                 st.rerun()
+
+    st.divider()
+
+    # ── Edit chunks ───────────────────────────────────────────────────────────
+    st.subheader("✏️ Sửa nội dung")
+
+    doc_names = [d["name"] for d in docs]
+    selected_doc = st.selectbox("Chọn tài liệu", doc_names, key="edit_doc")
+
+    if selected_doc:
+        search = st.text_input(
+            "Tìm đoạn văn bản chứa từ khóa",
+            placeholder="Nhập từ khóa để lọc...",
+            key="search_chunk",
+        )
+
+        chunks = list_chunks(selected_doc)
+        if search.strip():
+            kw = search.strip().lower()
+            chunks = [c for c in chunks if kw in c["text"].lower()]
+
+        st.caption(f"Tìm thấy {len(chunks)} đoạn")
+
+        for c in chunks[:50]:  # giới hạn 50 để tránh quá tải
+            chunk_id = c["id"]
+            preview = c["text"][:120] + ("..." if len(c["text"]) > 120 else "")
+
+            with st.expander(f"Đoạn #{c['chunk_index'] + 1} — {preview}"):
+                edit_key = f"edit_{chunk_id}"
+                new_text = st.text_area(
+                    "Nội dung",
+                    value=c["text"],
+                    height=180,
+                    key=edit_key,
+                )
+                col_save, col_info = st.columns([1, 4])
+                with col_save:
+                    if st.button("💾 Lưu", key=f"save_{chunk_id}", type="primary"):
+                        if new_text.strip() and new_text != c["text"]:
+                            with st.spinner("Đang cập nhật..."):
+                                update_chunk(chunk_id, new_text, selected_doc, c["chunk_index"])
+                            st.toast("Đã lưu!", icon="✅")
+                            st.rerun()
+                        else:
+                            st.toast("Không có thay đổi", icon="ℹ️")
+                with col_info:
+                    st.caption(f"ID: `{chunk_id}`")
