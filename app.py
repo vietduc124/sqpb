@@ -14,6 +14,7 @@ pg = st.navigation(
     [
         st.Page("pages/chat.py", title="💬 Hỏi đáp", default=True),
         st.Page("pages/tac_gia.py", title="👥 Nhóm tác giả"),
+        st.Page("pages/admin.py", title="📁 Admin", url_path="admin"),
     ],
     position="hidden",
 )
