@@ -10,6 +10,9 @@ from rag import retrieve_context
 
 load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 
+MAX_QUESTION_LEN = 300
+HISTORY_TURNS = 4  # giữ 4 lượt gần nhất (user + assistant)
+
 # ── Logo ───────────────────────────────────────────────────────────────────────
 logo_path = Path(__file__).parent.parent / "assets" / "logo.jpg"
 logo_html = '<div style="width:90px;height:90px;"></div>'
@@ -66,6 +69,8 @@ html,body,.stApp,
     padding:0 !important; margin:0 !important;
     max-width:100% !important; width:100% !important;
 }}
+/* Chừa khoảng dưới cho form fixed */
+.main .block-container {{ padding-bottom:90px !important; }}
 
 .pb-header {{
     display:flex; align-items:center; gap:24px;
@@ -93,10 +98,19 @@ html,body,.stApp,
 .chat-row {{ display:flex; padding:4px 24px; position:relative; z-index:1; }}
 .chat-row.user {{ justify-content:flex-end; }}
 .chat-row.bot  {{ justify-content:flex-start; }}
-.bubble {{ max-width:68%; padding:10px 16px; font-size:14px; line-height:1.65; word-break:break-word; }}
+.bubble {{ max-width:68%; padding:10px 16px; font-size:14px; line-height:1.65; word-break:break-word; position:relative; }}
 .bubble.user {{ background:#1a5c1a; color:#fff; border-radius:18px 18px 4px 18px; }}
-.bubble.bot {{ background:rgba(255,255,255,.92); color:#222; border-radius:18px 18px 18px 4px; border:1px solid #e0d0a0; }}
+.bubble.bot {{ background:rgba(255,255,255,.92); color:#222; border-radius:18px 18px 18px 4px; border:1px solid #e0d0a0; padding-right:36px; }}
 .bubble.bot code {{ background:rgba(0,0,0,.07); }}
+
+.tts-btn {{
+    position:absolute; right:6px; top:6px;
+    background:transparent; border:none; cursor:pointer;
+    font-size:16px; padding:2px 4px; line-height:1;
+    opacity:.55; transition:opacity .2s, transform .2s;
+}}
+.tts-btn:hover {{ opacity:1; transform:scale(1.15); }}
+.tts-btn.speaking {{ opacity:1; color:#c0392b; animation:pulse 1s ease-in-out infinite; }}
 
 [data-testid="stChatMessage"] {{ background:transparent !important; box-shadow:none !important; padding:4px 24px !important; }}
 
@@ -107,6 +121,38 @@ html,body,.stApp,
     padding:7px 16px; font-size:13px; font-weight:700; white-space:nowrap;
 }}
 
+/* Custom chat form */
+.pb-chat-form {{
+    position:fixed; bottom:0; left:0; right:0;
+    background:rgba(255,255,255,.97);
+    border-top:1px solid #e0d0a0;
+    padding:10px 16px;
+    display:flex; gap:8px; align-items:center;
+    z-index:100; box-shadow:0 -2px 8px rgba(0,0,0,.05);
+}}
+.pb-chat-form input[type="text"] {{
+    flex:1; padding:10px 14px; font-size:15px;
+    border:1px solid #ccc; border-radius:24px;
+    outline:none; background:#fff;
+}}
+.pb-chat-form input[type="text"]:focus {{ border-color:#1a5c1a; }}
+.pb-chat-form button {{
+    border:none; cursor:pointer; border-radius:50%;
+    width:42px; height:42px; font-size:18px;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s, background .2s;
+}}
+.pb-chat-form button:hover {{ transform:scale(1.08); }}
+#pb-mic {{ background:#fff; border:2px solid #1a5c1a !important; color:#1a5c1a; }}
+#pb-mic.recording {{ background:#c0392b; color:#fff; animation:pulse 1.2s ease-in-out infinite; }}
+#pb-send {{ background:#1a5c1a; color:#fff; }}
+#pb-send:hover {{ background:#236f23; }}
+
+@keyframes pulse {{
+    0%,100% {{ box-shadow:0 0 0 0 rgba(192,57,43,.6); }}
+    50% {{ box-shadow:0 0 0 8px rgba(192,57,43,0); }}
+}}
+
 @media(max-width:768px){{
     .pb-header{{ padding:10px 16px; gap:12px; }}
     .pb-header img{{ height:60px !important; width:60px !important; }}
@@ -115,6 +161,9 @@ html,body,.stApp,
     .bubble{{ max-width:85%; font-size:13px; }}
     .chat-row{{ padding:4px 12px; }}
     .pb-nav-btn{{ font-size:11px; padding:5px 10px; }}
+    .pb-chat-form{{ padding:8px 12px; }}
+    .pb-chat-form input[type="text"]{{ font-size:14px; padding:9px 12px; }}
+    .pb-chat-form button{{ width:38px; height:38px; font-size:16px; }}
 }}
 @media(max-width:480px){{
     .pb-title-1{{ font-size:11px; }}
@@ -158,18 +207,26 @@ if not st.session_state.messages:
     """, unsafe_allow_html=True)
 
 # ── Lịch sử chat ──────────────────────────────────────────────────────────────
-for msg in st.session_state.messages:
-    side = "user" if msg["role"] == "user" else "bot"
+def render_bubble(role: str, content: str):
+    side = "user" if role == "user" else "bot"
+    inner = md(content)
+    if side == "bot":
+        safe_text = html.escape(content, quote=True)
+        inner += f'<button class="tts-btn" data-tts="{safe_text}" onclick="ttsSpeak(this)" title="Nghe">🔊</button>'
     st.markdown(
-        f'<div class="chat-row {side}"><div class="bubble {side}">{md(msg["content"])}</div></div>',
+        f'<div class="chat-row {side}"><div class="bubble {side}">{inner}</div></div>',
         unsafe_allow_html=True,
     )
 
-MAX_QUESTION_LEN = 300
-HISTORY_TURNS = 4  # giữ 4 lượt gần nhất (user + assistant)
+for msg in st.session_state.messages:
+    render_bubble(msg["role"], msg["content"])
 
-# ── Chat input ─────────────────────────────────────────────────────────────────
-if prompt := st.chat_input("Hãy nhập câu hỏi của bạn tại đây... (tối đa 300 ký tự)"):
+# ── Lấy prompt từ query params (form submit) hoặc fallback chat_input ─────────
+prompt = st.query_params.get("q", "").strip()
+if prompt:
+    st.query_params.clear()
+
+if prompt:
     if len(prompt) > MAX_QUESTION_LEN:
         st.warning(f"⚠️ Câu hỏi quá dài ({len(prompt)} ký tự). Vui lòng rút gọn còn {MAX_QUESTION_LEN} ký tự.")
         st.stop()
@@ -198,7 +255,6 @@ if prompt := st.chat_input("Hãy nhập câu hỏi của bạn tại đây... (t
             "Hãy thông báo cho người dùng và đề nghị liên hệ admin để tải tài liệu lên."
         )
 
-    # Chỉ giữ HISTORY_TURNS lượt gần nhất
     recent = st.session_state.messages[-HISTORY_TURNS * 2:]
     api_messages = [{"role": m["role"], "content": m["content"]} for m in recent]
 
@@ -220,3 +276,108 @@ if prompt := st.chat_input("Hãy nhập câu hỏi của bạn tại đây... (t
 
     st.session_state.messages.append({"role": "assistant", "content": response})
     st.rerun()
+
+# ── Custom form + Web Speech API ──────────────────────────────────────────────
+st.markdown("""
+<form id="pb-chat-form" class="pb-chat-form" method="get" action="">
+    <button type="button" id="pb-mic" title="Nói tiếng Việt">🎙️</button>
+    <input type="text" name="q" id="pb-input" maxlength="300"
+           placeholder="Hãy nhập câu hỏi hoặc bấm mic..." autocomplete="off" />
+    <button type="submit" id="pb-send" title="Gửi">➤</button>
+</form>
+
+<script>
+(function() {
+    const form = document.getElementById('pb-chat-form');
+    const input = document.getElementById('pb-input');
+    const micBtn = document.getElementById('pb-mic');
+    if (!form || !input || !micBtn) return;
+
+    // Auto focus
+    setTimeout(() => input.focus(), 200);
+
+    // ── Voice input: SpeechRecognition ────────────────────────────────────
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+        micBtn.style.display = 'none';
+    } else {
+        let rec = null;
+        let listening = false;
+
+        function startRec() {
+            rec = new SR();
+            rec.lang = 'vi-VN';
+            rec.continuous = false;
+            rec.interimResults = true;
+            rec.maxAlternatives = 1;
+
+            rec.onstart = () => {
+                listening = true;
+                micBtn.classList.add('recording');
+                micBtn.textContent = '⏹';
+            };
+            rec.onresult = (e) => {
+                let txt = '';
+                for (let i = 0; i < e.results.length; i++) {
+                    txt += e.results[i][0].transcript;
+                }
+                input.value = txt.slice(0, 300);
+            };
+            rec.onerror = (e) => {
+                console.warn('Speech error:', e.error);
+            };
+            rec.onend = () => {
+                listening = false;
+                micBtn.classList.remove('recording');
+                micBtn.textContent = '🎙️';
+                if (input.value.trim()) input.focus();
+            };
+
+            try { rec.start(); }
+            catch (e) { console.warn('Start error:', e); }
+        }
+
+        function stopRec() {
+            if (rec) try { rec.stop(); } catch (e) {}
+        }
+
+        micBtn.addEventListener('click', () => {
+            if (listening) stopRec();
+            else startRec();
+        });
+    }
+
+    // ── Voice output: speechSynthesis ─────────────────────────────────────
+    if (!('speechSynthesis' in window)) {
+        document.querySelectorAll('.tts-btn').forEach(b => b.style.display = 'none');
+    } else {
+        // Pre-load voices (some browsers async)
+        speechSynthesis.getVoices();
+    }
+})();
+
+function ttsSpeak(btn) {
+    if (!('speechSynthesis' in window)) return;
+    const text = btn.dataset.tts || '';
+    if (!text) return;
+
+    speechSynthesis.cancel();
+    document.querySelectorAll('.tts-btn.speaking').forEach(b => b.classList.remove('speaking'));
+
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'vi-VN';
+    u.rate = 1.0;
+    u.pitch = 1.0;
+
+    const voices = speechSynthesis.getVoices();
+    const viVoice = voices.find(v => v.lang === 'vi-VN' || v.lang.startsWith('vi'));
+    if (viVoice) u.voice = viVoice;
+
+    btn.classList.add('speaking');
+    u.onend = () => btn.classList.remove('speaking');
+    u.onerror = () => btn.classList.remove('speaking');
+
+    speechSynthesis.speak(u);
+}
+</script>
+""", unsafe_allow_html=True)
