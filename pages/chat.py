@@ -100,17 +100,11 @@ html,body,.stApp,
 .chat-row.bot  {{ justify-content:flex-start; }}
 .bubble {{ max-width:68%; padding:10px 16px; font-size:14px; line-height:1.65; word-break:break-word; position:relative; }}
 .bubble.user {{ background:#1a5c1a; color:#fff; border-radius:18px 18px 4px 18px; }}
-.bubble.bot {{ background:rgba(255,255,255,.92); color:#222; border-radius:18px 18px 18px 4px; border:1px solid #e0d0a0; padding-right:36px; }}
+.bubble.bot {{ background:rgba(255,255,255,.92); color:#222; border-radius:18px 18px 18px 4px; border:1px solid #e0d0a0; }}
 .bubble.bot code {{ background:rgba(0,0,0,.07); }}
 
-.tts-btn {{
-    position:absolute; right:6px; top:6px;
-    background:transparent; border:none; cursor:pointer;
-    font-size:16px; padding:2px 4px; line-height:1;
-    opacity:.55; transition:opacity .2s, transform .2s;
-}}
-.tts-btn:hover {{ opacity:1; transform:scale(1.15); }}
-.tts-btn.speaking {{ opacity:1; color:#c0392b; animation:pulse 1s ease-in-out infinite; }}
+.tts-btn {{ display:none !important; }}
+#pb-mic {{ display:none !important; }}
 
 [data-testid="stChatMessage"] {{ background:transparent !important; box-shadow:none !important; padding:4px 24px !important; }}
 
