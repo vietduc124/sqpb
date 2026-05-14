@@ -17,9 +17,10 @@ if logo_path.exists():
     b64 = base64.b64encode(logo_path.read_bytes()).decode()
     logo_html = f'<a href="/" target="_self"><img src="data:image/jpeg;base64,{b64}" style="height:90px;width:90px;object-fit:contain;cursor:pointer;" alt="Logo"/></a>'
 
-# ── Background watermark ──────────────────────────────────────────────────────
-bg_path = Path(__file__).parent.parent / "assets" / "bg_80nam.jpg"
+# ── Hero image (PNG transparent) ──────────────────────────────────────────────
+bg_path = Path(__file__).parent.parent / "assets" / "bg_80nam.png"
 bg_b64 = ""
+bg_mime = "image/png"
 if bg_path.exists():
     bg_b64 = base64.b64encode(bg_path.read_bytes()).decode()
 
@@ -146,7 +147,7 @@ if "messages" not in st.session_state:
 
 # ── Greeting ───────────────────────────────────────────────────────────────────
 if not st.session_state.messages:
-    hero_img = f'<img class="pb-hero-img" src="data:image/jpeg;base64,{bg_b64}" alt="80 năm Pháo Binh Tên Lửa"/>' if bg_b64 else ""
+    hero_img = f'<img class="pb-hero-img" src="data:{bg_mime};base64,{bg_b64}" alt="80 năm Pháo Binh Tên Lửa"/>' if bg_b64 else ""
     st.markdown(f"""
     <div class="pb-greeting">
         {hero_img}
