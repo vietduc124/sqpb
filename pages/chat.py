@@ -17,6 +17,12 @@ if logo_path.exists():
     b64 = base64.b64encode(logo_path.read_bytes()).decode()
     logo_html = f'<a href="/" target="_self"><img src="data:image/jpeg;base64,{b64}" style="height:90px;width:90px;object-fit:contain;cursor:pointer;" alt="Logo"/></a>'
 
+# ── Background watermark ──────────────────────────────────────────────────────
+bg_path = Path(__file__).parent.parent / "assets" / "bg_80nam.jpg"
+bg_b64 = ""
+if bg_path.exists():
+    bg_b64 = base64.b64encode(bg_path.read_bytes()).decode()
+
 # ── Markdown → HTML ────────────────────────────────────────────────────────────
 def md(text: str) -> str:
     t = html.escape(text)
@@ -76,17 +82,9 @@ html,body,.stApp,
 .pb-chat-bg {{
     position:fixed; top:50%; left:50%;
     transform:translate(-50%,-50%);
-    width:min(500px,60vw); height:min(500px,60vw);
-    pointer-events:none; z-index:0; opacity:.10;
-    background:
-        radial-gradient(circle,transparent 55px,#8b6914 56px,#8b6914 58px,transparent 59px),
-        radial-gradient(circle,transparent 85px,#8b6914 86px,#8b6914 88px,transparent 89px),
-        radial-gradient(circle,transparent 115px,#8b6914 116px,#8b6914 118px,transparent 119px),
-        radial-gradient(circle,transparent 145px,#8b6914 146px,#8b6914 148px,transparent 149px),
-        radial-gradient(circle,transparent 175px,#8b6914 176px,#8b6914 178px,transparent 179px),
-        radial-gradient(circle,transparent 205px,#8b6914 206px,#8b6914 208px,transparent 209px),
-        radial-gradient(circle at center,#8b6914 4px,transparent 5px);
-    border-radius:50%;
+    width:min(550px,70vw); height:min(550px,70vw);
+    pointer-events:none; z-index:0; opacity:.12;
+    background:url("data:image/jpeg;base64,{bg_b64}") center/contain no-repeat;
 }}
 
 .pb-greeting {{ text-align:center; padding:56px 20px 20px; position:relative; z-index:1; }}
