@@ -103,8 +103,6 @@ html,body,.stApp,
 .bubble.bot {{ background:rgba(255,255,255,.92); color:#222; border-radius:18px 18px 18px 4px; border:1px solid #e0d0a0; }}
 .bubble.bot code {{ background:rgba(0,0,0,.07); }}
 
-.tts-btn {{ display:none !important; }}
-#pb-mic {{ display:none !important; }}
 
 [data-testid="stChatMessage"] {{ background:transparent !important; box-shadow:none !important; padding:4px 24px !important; }}
 
@@ -137,15 +135,8 @@ html,body,.stApp,
     transition:transform .15s, background .2s;
 }}
 .pb-chat-form button:hover {{ transform:scale(1.08); }}
-#pb-mic {{ background:#fff; border:2px solid #1a5c1a !important; color:#1a5c1a; }}
-#pb-mic.recording {{ background:#c0392b; color:#fff; animation:pulse 1.2s ease-in-out infinite; }}
 #pb-send {{ background:#1a5c1a; color:#fff; }}
 #pb-send:hover {{ background:#236f23; }}
-
-@keyframes pulse {{
-    0%,100% {{ box-shadow:0 0 0 0 rgba(192,57,43,.6); }}
-    50% {{ box-shadow:0 0 0 8px rgba(192,57,43,0); }}
-}}
 
 @media(max-width:768px){{
     .pb-header{{ padding:10px 16px; gap:12px; }}
@@ -201,19 +192,12 @@ if not st.session_state.messages:
     """, unsafe_allow_html=True)
 
 # ── Lịch sử chat ──────────────────────────────────────────────────────────────
-def render_bubble(role: str, content: str):
-    side = "user" if role == "user" else "bot"
-    inner = md(content)
-    if side == "bot":
-        safe_text = html.escape(content, quote=True)
-        inner += f'<button class="tts-btn" data-tts="{safe_text}" onclick="ttsSpeak(this)" title="Nghe">🔊</button>'
+for msg in st.session_state.messages:
+    side = "user" if msg["role"] == "user" else "bot"
     st.markdown(
-        f'<div class="chat-row {side}"><div class="bubble {side}">{inner}</div></div>',
+        f'<div class="chat-row {side}"><div class="bubble {side}">{md(msg["content"])}</div></div>',
         unsafe_allow_html=True,
     )
-
-for msg in st.session_state.messages:
-    render_bubble(msg["role"], msg["content"])
 
 # ── Lấy prompt từ query params (form submit) hoặc fallback chat_input ─────────
 prompt = st.query_params.get("q", "").strip()
@@ -271,107 +255,11 @@ if prompt:
     st.session_state.messages.append({"role": "assistant", "content": response})
     st.rerun()
 
-# ── Custom form + Web Speech API ──────────────────────────────────────────────
+# ── Chat form ──────────────────────────────────────────────────────────────────
 st.markdown("""
 <form id="pb-chat-form" class="pb-chat-form" method="get" action="">
-    <button type="button" id="pb-mic" title="Nói tiếng Việt">🎙️</button>
     <input type="text" name="q" id="pb-input" maxlength="300"
-           placeholder="Hãy nhập câu hỏi hoặc bấm mic..." autocomplete="off" />
+           placeholder="Hãy nhập câu hỏi của bạn tại đây..." autocomplete="off" autofocus />
     <button type="submit" id="pb-send" title="Gửi">➤</button>
 </form>
-
-<script>
-(function() {
-    const form = document.getElementById('pb-chat-form');
-    const input = document.getElementById('pb-input');
-    const micBtn = document.getElementById('pb-mic');
-    if (!form || !input || !micBtn) return;
-
-    // Auto focus
-    setTimeout(() => input.focus(), 200);
-
-    // ── Voice input: SpeechRecognition ────────────────────────────────────
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-        micBtn.style.display = 'none';
-    } else {
-        let rec = null;
-        let listening = false;
-
-        function startRec() {
-            rec = new SR();
-            rec.lang = 'vi-VN';
-            rec.continuous = false;
-            rec.interimResults = true;
-            rec.maxAlternatives = 1;
-
-            rec.onstart = () => {
-                listening = true;
-                micBtn.classList.add('recording');
-                micBtn.textContent = '⏹';
-            };
-            rec.onresult = (e) => {
-                let txt = '';
-                for (let i = 0; i < e.results.length; i++) {
-                    txt += e.results[i][0].transcript;
-                }
-                input.value = txt.slice(0, 300);
-            };
-            rec.onerror = (e) => {
-                console.warn('Speech error:', e.error);
-            };
-            rec.onend = () => {
-                listening = false;
-                micBtn.classList.remove('recording');
-                micBtn.textContent = '🎙️';
-                if (input.value.trim()) input.focus();
-            };
-
-            try { rec.start(); }
-            catch (e) { console.warn('Start error:', e); }
-        }
-
-        function stopRec() {
-            if (rec) try { rec.stop(); } catch (e) {}
-        }
-
-        micBtn.addEventListener('click', () => {
-            if (listening) stopRec();
-            else startRec();
-        });
-    }
-
-    // ── Voice output: speechSynthesis ─────────────────────────────────────
-    if (!('speechSynthesis' in window)) {
-        document.querySelectorAll('.tts-btn').forEach(b => b.style.display = 'none');
-    } else {
-        // Pre-load voices (some browsers async)
-        speechSynthesis.getVoices();
-    }
-})();
-
-function ttsSpeak(btn) {
-    if (!('speechSynthesis' in window)) return;
-    const text = btn.dataset.tts || '';
-    if (!text) return;
-
-    speechSynthesis.cancel();
-    document.querySelectorAll('.tts-btn.speaking').forEach(b => b.classList.remove('speaking'));
-
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'vi-VN';
-    u.rate = 1.0;
-    u.pitch = 1.0;
-
-    const voices = speechSynthesis.getVoices();
-    const viVoice = voices.find(v => v.lang === 'vi-VN' || v.lang.startsWith('vi'));
-    if (viVoice) u.voice = viVoice;
-
-    btn.classList.add('speaking');
-    u.onend = () => btn.classList.remove('speaking');
-    u.onerror = () => btn.classList.remove('speaking');
-
-    speechSynthesis.speak(u);
-}
-</script>
 """, unsafe_allow_html=True)
