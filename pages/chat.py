@@ -79,12 +79,10 @@ html,body,.stApp,
 .pb-ticker {{ background:#1a2e5a; padding:12px 20px; text-align:center; }}
 .pb-ticker-inner {{ color:#ffd700; font-weight:700; font-size:15px; line-height:1.7; letter-spacing:.5px; }}
 
-.pb-chat-bg {{
-    position:fixed; top:50%; left:50%;
-    transform:translate(-50%,-50%);
-    width:min(550px,70vw); height:min(550px,70vw);
-    pointer-events:none; z-index:0; opacity:.12;
-    background:url("data:image/jpeg;base64,{bg_b64}") center/contain no-repeat;
+.pb-hero-img {{
+    display:block;
+    margin:24px auto 8px;
+    width:min(360px,55vw); height:auto;
 }}
 
 .pb-greeting {{ text-align:center; padding:56px 20px 20px; position:relative; z-index:1; }}
@@ -140,7 +138,6 @@ html,body,.stApp,
         (1946 - 2026)
     </span>
 </div>
-<div class="pb-chat-bg"></div>
 """, unsafe_allow_html=True)
 
 # ── Session state ──────────────────────────────────────────────────────────────
@@ -149,9 +146,10 @@ if "messages" not in st.session_state:
 
 # ── Greeting ───────────────────────────────────────────────────────────────────
 if not st.session_state.messages:
-    st.markdown("""
+    hero_img = f'<img class="pb-hero-img" src="data:image/jpeg;base64,{bg_b64}" alt="80 năm Pháo Binh Tên Lửa"/>' if bg_b64 else ""
+    st.markdown(f"""
     <div class="pb-greeting">
-        <div class="pb-greeting-icon">🎯</div>
+        {hero_img}
         <div class="pb-greeting-text">
             Xin chào! Trường Sĩ quan Pháo binh<br>có thể giúp gì cho bạn?
         </div>
